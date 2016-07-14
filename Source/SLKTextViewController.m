@@ -85,7 +85,7 @@ CGFloat const SLKAutoCompletionViewDefaultHeight = 140.0;
 {
     NSAssert([self class] != [SLKTextViewController class], @"Oops! You must subclass SLKTextViewController.");
     NSAssert(style == UITableViewStylePlain || style == UITableViewStyleGrouped, @"Oops! You must pass a valid UITableViewStyle.");
-
+    
     if (self = [super initWithNibName:nil bundle:nil])
     {
         self.scrollViewProxy = [self tableViewWithStyle:style];
@@ -98,7 +98,7 @@ CGFloat const SLKAutoCompletionViewDefaultHeight = 140.0;
 {
     NSAssert([self class] != [SLKTextViewController class], @"Oops! You must subclass SLKTextViewController.");
     NSAssert([layout isKindOfClass:[UICollectionViewLayout class]], @"Oops! You must pass a valid UICollectionViewLayout object.");
-
+    
     if (self = [super initWithNibName:nil bundle:nil])
     {
         self.scrollViewProxy = [self collectionViewWithLayout:layout];
@@ -111,7 +111,7 @@ CGFloat const SLKAutoCompletionViewDefaultHeight = 140.0;
 {
     NSAssert([self class] != [SLKTextViewController class], @"Oops! You must subclass SLKTextViewController.");
     NSAssert([scrollView isKindOfClass:[UIScrollView class]], @"Oops! You must pass a valid UIScrollView object.");
-
+    
     if (self = [super initWithNibName:nil bundle:nil])
     {
         _scrollView = scrollView;
@@ -127,7 +127,7 @@ CGFloat const SLKAutoCompletionViewDefaultHeight = 140.0;
 {
     NSAssert([self class] != [SLKTextViewController class], @"Oops! You must subclass SLKTextViewController.");
     NSAssert([decoder isKindOfClass:[NSCoder class]], @"Oops! You must pass a valid decoder object.");
-
+    
     if (self = [super initWithCoder:decoder])
     {
         UITableViewStyle tableViewStyle = [[self class] tableViewStyleForCoder:decoder];
@@ -153,7 +153,6 @@ CGFloat const SLKAutoCompletionViewDefaultHeight = 140.0;
     self.inverted = YES;
     self.shakeToClearEnabled = NO;
     self.keyboardPanningEnabled = YES;
-    self.shouldClearTextAtRightButtonPress = YES;
     self.shouldScrollToBottomAfterKeyboardShows = NO;
     
     self.automaticallyAdjustsScrollViewInsets = YES;
@@ -310,7 +309,6 @@ CGFloat const SLKAutoCompletionViewDefaultHeight = 140.0;
         _textInputbar.translatesAutoresizingMaskIntoConstraints = NO;
         
         [_textInputbar.leftButton addTarget:self action:@selector(didPressLeftButton:) forControlEvents:UIControlEventTouchUpInside];
-        [_textInputbar.rightButton addTarget:self action:@selector(didPressRightButton:) forControlEvents:UIControlEventTouchUpInside];
         [_textInputbar.editorLeftButton addTarget:self action:@selector(didCancelTextEditing:) forControlEvents:UIControlEventTouchUpInside];
         [_textInputbar.editorRightButton addTarget:self action:@selector(didCommitTextEditing:) forControlEvents:UIControlEventTouchUpInside];
         
@@ -366,9 +364,9 @@ CGFloat const SLKAutoCompletionViewDefaultHeight = 140.0;
     return _textInputbar.leftButton;
 }
 
-- (UIButton *)rightButton
+- (UIStackView *)rightButtons
 {
-    return _textInputbar.rightButton;
+    return _textInputbar.rightButtons;
 }
 
 - (UIModalPresentationStyle)modalPresentationStyle
@@ -659,9 +657,6 @@ CGFloat const SLKAutoCompletionViewDefaultHeight = 140.0;
     
     CGFloat inputbarHeight = _textInputbar.appropriateHeight;
     
-    _textInputbar.rightButton.enabled = [self canPressRightButton];
-    _textInputbar.editorRightButton.enabled = [self canPressRightButton];
-    
     if (inputbarHeight != self.textInputbarHC.constant)
     {
         self.textInputbarHC.constant = inputbarHeight;
@@ -713,31 +708,9 @@ CGFloat const SLKAutoCompletionViewDefaultHeight = 140.0;
     [self slk_processTextForAutoCompletion];
 }
 
-- (BOOL)canPressRightButton
-{
-    NSString *text = [self.textView.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    
-    if (text.length > 0 && ![_textInputbar limitExceeded]) {
-        return YES;
-    }
-    
-    return NO;
-}
-
 - (void)didPressLeftButton:(id)sender
 {
     // No implementation here. Meant to be overriden in subclass.
-}
-
-- (void)didPressRightButton:(id)sender
-{
-    if (self.shouldClearTextAtRightButtonPress) {
-        // Clears the text and the undo manager
-        [self.textView slk_clearText:YES];
-    }
-    
-    // Clears cache
-    [self clearCachedText];
 }
 
 - (void)editText:(NSString *)text
@@ -1103,15 +1076,6 @@ CGFloat const SLKAutoCompletionViewDefaultHeight = 140.0;
     [self presentKeyboard:YES];
 }
 
-- (void)slk_performRightAction
-{
-    NSArray *actions = [self.rightButton actionsForTarget:self forControlEvent:UIControlEventTouchUpInside];
-    
-    if (actions.count > 0 && [self canPressRightButton]) {
-        [self.rightButton sendActionsForControlEvents:UIControlEventTouchUpInside];
-    }
-}
-
 - (void)slk_postKeyboarStatusNotification:(NSNotification *)notification
 {
     if ([self ignoreTextInputbarAdjustment] || self.isTransitioning) {
@@ -1150,7 +1114,7 @@ CGFloat const SLKAutoCompletionViewDefaultHeight = 140.0;
     BOOL enable = !self.isAutoCompleting;
     
     NSString *inputPrimaryLanguage = self.textView.textInputMode.primaryLanguage;
-
+    
     // Toggling autocorrect on Japanese keyboards breaks autocompletion by replacing the autocompletion prefix by an empty string.
     // So for now, let's not disable autocorrection for Japanese.
     if ([inputPrimaryLanguage isEqualToString:@"ja-JP"]) {
@@ -1281,9 +1245,6 @@ CGFloat const SLKAutoCompletionViewDefaultHeight = 140.0;
     if (_textInputbar.isEditing) {
         [self didCommitTextEditing:keyCommand];
     }
-    else {
-        [self slk_performRightAction];
-    }
 }
 
 - (void)didPressEscapeKey:(UIKeyCommand *)keyCommand
@@ -1361,7 +1322,7 @@ CGFloat const SLKAutoCompletionViewDefaultHeight = 140.0;
     
     // Stores the previous keyboard height
     CGFloat previousKeyboardHeight = self.keyboardHC.constant;
-
+    
     // Updates the height constraints' constants
     self.keyboardHC.constant = [self slk_appropriateKeyboardHeightFromNotification:notification];
     self.scrollViewHC.constant = [self slk_appropriateScrollViewHeight];
@@ -2166,7 +2127,7 @@ CGFloat const SLKAutoCompletionViewDefaultHeight = 140.0;
 - (void)slk_registerKeyCommands
 {
     __weak typeof(self) weakSelf = self;
-
+    
     // Enter Key
     [self.textView observeKeyInput:@"\r" modifiers:0 title:NSLocalizedString(@"Send/Accept", nil) completion:^(UIKeyCommand *keyCommand) {
         [weakSelf didPressReturnKey:keyCommand];
@@ -2233,7 +2194,7 @@ CGFloat const SLKAutoCompletionViewDefaultHeight = 140.0;
 - (void)slk_unregisterNotifications
 {
     NSNotificationCenter *notificationCenter = [NSNotificationCenter defaultCenter];
-
+    
     // Keyboard notifications
     [notificationCenter removeObserver:self name:UIKeyboardWillShowNotification object:nil];
     [notificationCenter removeObserver:self name:UIKeyboardWillHideNotification object:nil];
@@ -2314,7 +2275,7 @@ CGFloat const SLKAutoCompletionViewDefaultHeight = 140.0;
 - (void)dealloc
 {
     [self slk_unregisterNotifications];
-
+    
     _tableView.delegate = nil;
     _tableView.dataSource = nil;
     _tableView = nil;

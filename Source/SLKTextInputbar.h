@@ -42,11 +42,8 @@ NS_ASSUME_NONNULL_BEGIN
 /** The left action button action. */
 @property (nonatomic, strong) UIButton *leftButton;
 
-/** The right action button action. */
-@property (nonatomic, strong) UIButton *rightButton;
-
-/** YES if the right button should be hidden animatedly in case the text view has no text in it. Default is YES. */
-@property (nonatomic, readwrite) BOOL autoHideRightButton;
+/** The right stack view. */
+@property (nonatomic, strong) UIStackView *rightButtons;
 
 /** YES if animations should have bouncy effects. Default is YES. */
 @property (nonatomic, assign) BOOL bounces;

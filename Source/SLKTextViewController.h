@@ -97,9 +97,6 @@ NS_CLASS_AVAILABLE_IOS(7_0) @interface SLKTextViewController : UIViewController 
 /** YES if the keyboard has been detected as undocked or split (iPad Only). */
 @property (nonatomic, readonly, getter=isKeyboardUndocked) BOOL keyboardUndocked;
 
-/** YES if after right button press, the text view is cleared out. Default is YES. */
-@property (nonatomic, assign) BOOL shouldClearTextAtRightButtonPress;
-
 /** YES if the scrollView should scroll to bottom when the keyboard is shown. Default is NO.*/
 @property (nonatomic, assign) BOOL shouldScrollToBottomAfterKeyboardShows;
 
@@ -120,7 +117,7 @@ NS_CLASS_AVAILABLE_IOS(7_0) @interface SLKTextViewController : UIViewController 
 /** Convenience accessors (accessed through the text input bar) */
 @property (nonatomic, readonly) SLKTextView *textView;
 @property (nonatomic, readonly) UIButton *leftButton;
-@property (nonatomic, readonly) UIButton *rightButton;
+@property (nonatomic, readonly) UIStackView *rightButtons;
 
 
 #pragma mark - Initialization
@@ -272,23 +269,6 @@ NS_CLASS_AVAILABLE_IOS(7_0) @interface SLKTextViewController : UIViewController 
  @param sender The object calling this method.
  */
 - (void)didPressLeftButton:(id _Nullable)sender;
-
-/**
- Notifies the view controller when the right button's action has been triggered, manually or by using the keyboard return key.
- You can override this method to perform additional tasks associated with the right button.
- You MUST call super at some point in your implementation.
- 
- @param sender The object calling this method.
- */
-- (void)didPressRightButton:(id _Nullable)sender NS_REQUIRES_SUPER;
-
-/**
- Verifies if the right button can be pressed. If NO, the button is disabled.
- You can override this method to perform additional tasks. You SHOULD call super to inherit some conditionals.
- 
- @return YES if the right button can be pressed.
- */
-- (BOOL)canPressRightButton;
 
 /**
  Notifies the view controller when the user has pasted a supported media content (images and/or videos).
